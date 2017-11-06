@@ -1,0 +1,25 @@
+{
+  "name": "sms_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "send-sms.js",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "formidable": "^1.1.1",
+    "fs": "0.0.1-security",
+    "twilio": "^3.7.0",
+    "util": "^0.10.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node sms-service.js",
+    "new_user": "node send-sms.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "6.11.3"
+  }
+}
