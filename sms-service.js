@@ -10,49 +10,6 @@ var twilio = require('twilio');
 var MessagingResponse = require('twilio').twiml.MessagingResponse;
 var bodyParser = require('body-parser');
 
-var questions = [
-    {
-        "questionId": 0,
-        "questionName": "Test question Name",
-        "info": "Do you wash your hands before you eat? You should! Otherwise you lend yourself vulnerable to nasty bacteria found on the street.",
-        "question": "How many minutes should you wash your hands?",
-        "choices": ['1. 2 minutes', '2. 1 minute', '3. 4 minutes'],
-        "answer": 1
-    },
-    {
-        "questionId": 1,
-        "questionName": "Test question Name1",
-        "info": "Basic information1",
-        "question": "What is blah blah, basic question1?",
-        "choices": [1, 2, 3],
-        "answer": 2
-    },
-    {
-        "questionId": 2,
-        "questionName": "Test question Name2",
-        "info": "Basic information2",
-        "question": "What is blah blah, basic question2?",
-        "choices": [1, 2, 3],
-        "answer": 3
-    },
-]
-var users = [
-    {
-        'name': 'Jon Koller',
-        'number': '+19143301533'
-    },
-
-    {
-        "name": "Bruce Wayne",
-        "number": "+19174445555"
-    }
-	,
-    {
-        "name": "Arnold Schwartzenager",
-        "number": "+12123334444"
-    }
-	]
-
 var client = require('twilio')(
         // process.env.TWILIO_ACCOUNT_SID,
         // process.env.TWILIO_AUTH_TOKEN
@@ -189,14 +146,50 @@ http.createServer(app).listen(process.env.PORT || 3000, function () {
     console.log("Express server listening on port 3000");
 });
 
-var dayInMilliseconds = 1000 * 60 * 60 * 24;
-var globalDay = 0;
 
 
-/*
-setInterval(function () {
-	var lenInfoSet = questions.length;
-	if (globalDay == lenInfoSet) globalDay = 1;
-	else globalDay++;
-}, dayInMilliseconds);
-*/
+function readSql() {
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost",
+		user: "root",
+		password: "1111",
+		database: 'db'
+	});
+con.connect((err) => {
+  if(err){
+    console.log(err);
+    return;
+  }
+  console.log('Connection established');
+});
+	con.query('select * from class', function (error, rows, fields) {
+		if (error) throw error;
+		console.log(rows[0]['phonenumber']);
+	});
+	con.end();
+}
+
+var phonenumber = '1-444-312-1534';
+function addUserToSql() {
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost",
+		user: "root",
+		password: "1111",
+		database: 'db'
+	});
+con.connect((err) => {
+  if(err){
+    console.log(err);
+    return;
+  }
+  console.log('Connection established');
+});
+	
+//	'UPDATE users SET foo = ?, bar = ?, baz = ? WHERE id = ?', ['a', 'b', 'c', userId],
+	con.query('insert into class (`phonenumber`) value (?)', [phonenumber], function (error, rows, fields) {
+		if (error) throw error;
+	});
+	con.end();
+}
