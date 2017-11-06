@@ -31,6 +31,7 @@ app.post('/sms', function (request, response) {
     if(msgBody.toLowerCase().trim() == 'join'){
 //        console.log(request.body);      //provides parsed body
 //        console.log(request.body.From); //provides sender number
+        addUserToSql(request.body.From);
     }else{
         console.log('Please check your spelling!');
     }
@@ -61,9 +62,9 @@ function readSql() {
     });
     con.end();
 }
-var phonenumber = '1-444-312-1534';
+//var phonenumber = '1-444-312-1534';
 
-function addUserToSql() {
+function addUserToSql(phonenumber) {
     var mysql = require('mysql');
     var con = mysql.createConnection({
         host: "localhost",
