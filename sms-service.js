@@ -31,11 +31,13 @@ app.post('/sms', function (request, response) {
     var msgBody = request.body.Body;
     var userPhone = request.body.From;
 
+    console.log(checkRegistration(userPhone))
+
     if(msgBody.toLowerCase().trim() == 'join'){
         addUserToSql(userPhone);
-    } else if(msgBody.toLowerCase().trim() == 'start quiz' && checkRegistration(userPhone)){
-        takeQuiz(userPhone);
-    }
+    } else if(msgBody.toLowerCase().trim() == 'start quiz'){
+        // takeQuiz(userPhone);
+        console.log('Take Quiz')
     }else{
         InvalidUserInputText(userPhone, msgBody)
     }
@@ -60,9 +62,8 @@ function sendInformationText(phoneNumbers){
 
 function checkRegistration(phonenumber){
     // Check if user exists in DB
-    if (checkNumberExists(phonenumber)){
-        return True;
-    }
+    checkNumberExists(phonenumber)
+
 }
 
 function takeQuiz(phonenumber){
@@ -135,7 +136,7 @@ function InvalidUserInputText(phonenumber, text){
     client.messages.create({
         from: '+19149966800',
         to: phonenumber,
-        body: "Please check your spelling, text 'join' to join the class"
+        body: "Please check your spelling, if you have not joined the class text 'join' to start learning!"
     }, function (err, message) {
         if (err) console.error(err.message);
     });
@@ -206,8 +207,10 @@ function addUserToSql(phonenumber) {
     successfullyAddedText(phonenumber);
 }
 
+
+var exists = false;
 function checkNumberExists(phonenumber){
-    var exists;
+    console.log('Checking if number: '+phonenumber+' is in DB')
     var mysql = require('mysql');
     var con = mysql.createConnection({
         host: "localhost",
@@ -224,15 +227,15 @@ function checkNumberExists(phonenumber){
     });
     con.query('select * from class where (?)', [phonenumber],function (error, rows, fields) {
         if (error) {
-            throw error;
-            exists = False;
             console.log('Phone Number: '+phonenumber+' does not exist in DB')
-        }
-        console.log(rows[0]['phonenumber']);
-        exists = True;
+            throw error;
+        } 
+        if (rows[0]['phonenumber']){
+            exists = true;
+            console.log("HERE")
+        }        
     });
     con.end();
-    return exists;
 }
 
 
