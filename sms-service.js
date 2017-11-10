@@ -110,6 +110,10 @@ app.post('/admin', function (req, res) {
     console.log('Lesson Started');    
 })
 
+app.get('/',function(req,res){
+	res.redirect('/admin');
+});
+
 
 // ================================================================
 // jQuery Form
