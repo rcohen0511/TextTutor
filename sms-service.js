@@ -141,20 +141,17 @@ function formSubmission(req, res) {
     });
 
     form.on('end', function () {
-        res.writeHead(200, {
-            'content-type': 'text/plain'
-        });
+				res.redirect('/grades');	
         res.end(util.inspect({
             fields: fields
         }));
 
     // // Printing Out Form
-    //     console.log(fields);
-    //     console.log(values);
-        addQuestionsToSql(values);
+//        addQuestionsToSql(values);
     });
     form.parse(req);
 }
+
 // ================================================================
 // Twillio Messages
 // ================================================================
@@ -373,7 +370,18 @@ function hasTakenQuiz(phonenumber){
 // 1 link 
 // 3 images
 
-function getClassGrades(){
-    return 
-}
+app.get('/grades',function(req,res){
+	getClassGrades(res);
+});
 
+
+function getClassGrades(res) {
+	fs.readFile('grades_table.html', function (err, data) {
+		res.writeHead(200, {
+			'Content-Type': 'text/html'
+			, 'Content-Length': data.length
+		});
+		res.write(data);
+		res.end();
+	});
+}

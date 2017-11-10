@@ -2,15 +2,16 @@
 
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.css" /> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.css" />
 	<style>
-		h2{
-			background-color:aquamarine;
+		h2 {
+			background-color: aquamarine;
 			margin-bottom: -3%;
 			padding: 1%;
 		}
-		label{
-			background-color:yellow;
+		
+		label {
+			background-color: yellow;
 			margin: 2% 55% 0 5%;
 			padding: 1%;
 		}
@@ -35,22 +36,20 @@
 				<label for="choice2">Enter another choice:</label>
 				<input type="text" id="choice2" name="choice2" placeholder="One more choice" />
 				<br>
-				<!--
-			<h3>Lastly... what kind of question is this? (Formats the students' invitations to take the quiz!)</h3>
-			<form action="">
-				<input type="radio" name="Who" value="Who"> Who?<br>
-				<input type="radio" name="What" value="What"> What?<br>
-				<input type="radio" name="When" value="When"> When? <br>
-				<input type="radio" name="Where" value="Where"> Where? <br>
-				<input type="radio" name="Why" value="Why"> Why? <br>
-				<input type="radio" name="How" value="How"> How? <br>
-			</form>
--->
 				<br />
 				<input type="submit" value="SEND SMS Message" /> </fieldset>
 		</form>
+		<button id='seeGrades'>See Class Grades</button>
 		<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.js"></script>
+		<script>
+			
+			
+ $('#seeGrades').click(function () {
+	 window.location.replace('localhost:3000/grades');
+ 	});
+
+		</script>
 	</body>
 
 </html>
