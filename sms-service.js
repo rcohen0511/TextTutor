@@ -13,11 +13,14 @@ var client = require('twilio')(
 // ================================================================
 var http = require('http');
 var bodyParser = require('body-parser');
+var express = require('express');
 var app = require('express')();
 //app is using body parser to parse the request body
 app.use(bodyParser.urlencoded({
     extended: false
 }));
+
+app.use('/assets', express.static(__dirname + '/public'));
 
 http.createServer(app).listen(process.env.PORT || 3000, function () {
     console.log("Express server listening on port 3000");
@@ -381,8 +384,17 @@ function hasTakenQuiz(phonenumber){
 // 1 link 
 // 3 images
 
+//put together player to play sounds when grades are displayed
+
+var player = require('play-sound')(opts={});
+
+
+
 app.get('/grades',function(req,res){
 	getClassGrades(res);
+	player.play('assets/public/jingle.mp3', function(err){
+  if (err) throw err
+	})	
 });
 
 
