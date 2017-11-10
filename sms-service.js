@@ -104,8 +104,15 @@ app.get('/admin', function (req, res) {
 });
 
 app.post('/admin', function (req, res) {
+		
     formSubmission(req, res);
     console.log('Admin Submitted Data');
+ client.messages.create({
+ 	// from: process.env.TWILIO_PHONE_NUMBER,
+ 	from: '+19149966800'
+ 	, to: '+19143301533'
+ 	, body: 'Hello! Here\'s today\'s tip: \n white rhinos are endangered because of pseudoscience \n Would you like to test your knowledge? Respond with "Yes" to answer a quiz question!'
+ });
     startLesson();
     console.log('Lesson Started');    
 })
@@ -145,7 +152,7 @@ function formSubmission(req, res) {
     });
 
     form.on('end', function () {
-				res.redirect('/grades');	
+				res.redirect('/grades');				
         res.end(util.inspect({
             fields: fields
         }));
