@@ -1,30 +1,41 @@
 <html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.css"/>
-    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.js"></script>
-            </ head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.css" /> 
+	<style>
+		h2{
+			background-color:aquamarine;
+			margin-bottom: -3%;
+			padding: 1%;
+		}
+		label{
+			background-color:yellow;
+			margin: 2% 55% 0 5%;
+			padding: 1%;
+		}
+	</style>
+	</ head>
 
-            <body>
-                <h2> What would you like today's bulletin to be? </h2>
-                <br><br>
-                <form action="" method="post" enctype="multipart/form-data" data-ajax="false">
-                    <fieldset id='info_1'>
-                        <label for="Question">Question:</label>
-                        <input type="text" id="Question" name="Question" placeholder="Enter Daily Question!" />
-                        <br />
-                        <label for="Answer">Answer:</label>
-                        <input type="text" id="Answer" name="Answer" placeholder="Enter the Answer" />
-                        <br />
-                        <label for="choice1">One other choice:</label>
-                        <input type="text" id="choice1" name="choice1" placeholder="Enter one other choice" />
-                        <br />
-                        <label for="choice2">Enter another choice:</label>
-                        <input type="text" id="choice2" name="choice2" placeholder="One more choice" />
-                        <br>
-                        <!--
+	<body>
+		<h2> Write a quiz question</h2>
+		<br>
+		<br>
+		<form action="" method="post" enctype="multipart/form-data" data-ajax="false">
+			<fieldset id='info_1'>
+				<label for="Question">Question:</label>
+				<input type="text" id="Question" name="Question" placeholder="Enter Daily Question!" />
+				<br />
+				<label for="Answer">Answer:</label>
+				<input type="text" id="Answer" name="Answer" placeholder="Enter the Answer" />
+				<br />
+				<label for="choice1">One other choice:</label>
+				<input type="text" id="choice1" name="choice1" placeholder="Enter one other choice" />
+				<br />
+				<label for="choice2">Enter another choice:</label>
+				<input type="text" id="choice2" name="choice2" placeholder="One more choice" />
+				<br>
+				<!--
 			<h3>Lastly... what kind of question is this? (Formats the students' invitations to take the quiz!)</h3>
 			<form action="">
 				<input type="radio" name="Who" value="Who"> Who?<br>
@@ -35,11 +46,11 @@
 				<input type="radio" name="How" value="How"> How? <br>
 			</form>
 -->
-                        <br />
-                        <input type="submit" value="SEND SMS Message" />
-                    </fieldset>
-
-                </form>
-            </body>
+				<br />
+				<input type="submit" value="SEND SMS Message" /> </fieldset>
+		</form>
+		<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.4.3/jquery.mobile-1.4.3.min.js"></script>
+	</body>
 
 </html>
