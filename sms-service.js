@@ -20,7 +20,8 @@ app.use(bodyParser.urlencoded({
     extended: false
 }));
 
-app.use('/assets', express.static(__dirname + '/public'));
+//app.use(express.static('assets'));
+app.use('/static', express.static('assets'))
 
 http.createServer(app).listen(process.env.PORT || 3000, function () {
     console.log("Express server listening on port 3000");
