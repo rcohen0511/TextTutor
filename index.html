@@ -12,12 +12,12 @@
 		
 		#imgLoader {
 			border: 1px solid aquamarine;
-			display:none;
+			display: none;
 			background-color: antiquewhite;
 			position: absolute;
 			top: 25%;
 			left: 25%;
-			z-index: 1000;			
+			z-index: 1000;
 		}
 		
 		@keyframes fade {
@@ -67,26 +67,21 @@
 			var audio = new Audio('/static/jingle.mp3');
 			$('#submitQuestion').click(function () {
 				audio.play();
-				
+				$('#imgLoader').css({
+					'display': 'inline'
+					, 'animation': 'fade .5s 2'
+				});
+				setTimeout(function () {
+					$('img').attr('src', 'static/loading2.png');
+				}, 500);
+				setTimeout(function () {
+					$('img').attr('src', 'static/loading3.png');
 					$('#imgLoader').css({
-						'display':'inline',
-						'animation':'fade .5s 2'
-					});					
-				
-				setTimeout(function(){
-					$('img').attr('src','static/loading2.png');				
-				},500);
-				setTimeout(function(){
-					$('img').attr('src','static/loading3.png');			
-					$('#imgLoader').css({
-						'display':'inline',
-						'animation':'fade .25s 1'
-					});								
-					
-				},1000);				
+						'display': 'inline'
+						, 'animation': 'fade .25s 1'
+					});
+				}, 1000);
 			});
-			
-			
 			$('#seeGrades').click(function () {
 				window.location.replace('https://texttutortwil.herokuapp.com/grades');
 			});

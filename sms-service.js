@@ -112,6 +112,10 @@ app.post('/admin', function (req, res) {
 		setTimeout(function(){
 			formSubmission(req, res);
 			console.log('Admin Submitted Data');
+			
+//++++------
+		//added text message here to make sure texts are being sent and server is properly hooked to Twilio
+//----+++++
 	 client.messages.create({
 		// from: process.env.TWILIO_PHONE_NUMBER,
 		from: '+19149966800'
@@ -123,6 +127,10 @@ app.post('/admin', function (req, res) {
 			
 		},1500);
 })
+
+// ================================================================
+// root redirects to /admin 
+//  ================================================================
 
 app.get('/',function(req,res){
 	res.redirect('/admin');
@@ -159,6 +167,11 @@ function formSubmission(req, res) {
     });
 
     form.on('end', function () {
+/* 
+redirects to grades page
+and original header written
+in function in app.get('/grades')
+	*/
 				res.redirect('/grades');				
         res.end(util.inspect({
             fields: fields
@@ -168,6 +181,22 @@ function formSubmission(req, res) {
 //        addQuestionsToSql(values);
     });
     form.parse(req);
+}
+
+app.get('/grades',function(req,res){
+	getClassGrades(res);	
+});
+
+
+function getClassGrades(res) {
+	fs.readFile('grades_table.html', function (err, data) {
+		res.writeHead(200, {
+			'Content-Type': 'text/html'
+			, 'Content-Length': data.length
+		});
+		res.write(data);
+		res.end();
+	});
 }
 
 // ================================================================
@@ -380,31 +409,6 @@ function hasTakenQuiz(phonenumber){
     return true;
 }
 
-// Jon will finish this function and create an HTML table that will be shown after
-// form submission:
-// Make a button to refresh
-// Listview 
-// sound/video
-// 1 link 
-// 3 images
-
-//put together player to play sounds when grades are displayed
 
 
 
-app.get('/grades',function(req,res){
-	getClassGrades(res);
-		
-});
-
-
-function getClassGrades(res) {
-	fs.readFile('grades_table.html', function (err, data) {
-		res.writeHead(200, {
-			'Content-Type': 'text/html'
-			, 'Content-Length': data.length
-		});
-		res.write(data);
-		res.end();
-	});
-}
