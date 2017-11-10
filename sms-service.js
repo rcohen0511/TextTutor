@@ -386,15 +386,11 @@ function hasTakenQuiz(phonenumber){
 
 //put together player to play sounds when grades are displayed
 
-var player = require('play-sound')(opts={});
-
 
 
 app.get('/grades',function(req,res){
 	getClassGrades(res);
-	player.play('assets/public/jingle.mp3', function(err){
-  if (err) throw err
-	})	
+		
 });
 
 
