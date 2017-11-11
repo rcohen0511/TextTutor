@@ -238,23 +238,14 @@ function readSql() {
 		if (error) throw error;
 		numbers.push(rows[0]['phonenumber']);
 	})).then(con.end())
+	
+//++++====++++====
+	//anything can be put in here that relates to data derived from the query
+//++++====++++====___________________________________________
 	setTimeout(function () {
 		console.log(numbers);
 	}, 1000);
-	/*
-    con.query('select * from class', function (error, rows, fields) {
-        if (error) throw error;
-				numbers.push(rows[0]['phonenumber']);
-        console.log(numbers);
-    });		
-		setTimeout(function(){	
-    	con.end();
-		},100)
-	setTimeout(function(){
-		
-	console.log(numbers);
-	},110);
-	*/
+
 }
 
 function addUserToSql(phonenumber) {
