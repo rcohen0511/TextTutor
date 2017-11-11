@@ -266,6 +266,10 @@ function readSql() {
 		setTimeout(function(){	
     	con.end();
 		},100)
+	setTimeout(function(){
+		
+	console.log(numbers);
+	},110);
 }
 
 
