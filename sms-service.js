@@ -105,6 +105,7 @@ function sendQuestion(phonenumber){
 // ================================================================
 app.get('/admin', function (req, res) {
     displayForm(res);
+		readSql();
 });
 
 app.post('/admin', function (req, res) {
@@ -234,10 +235,14 @@ function sendIncorrectResponse(phonenumber, answer, correctAnswer){
         if (err) console.error(err.message);
     });
 }
+//promises needed to emulate synchronous scripting with SQL calls
 
-// ================================================================
+var Promise = require('promise');
+
+//================================================================
 //database is set up here 
 // ================================================================
+var numbers = [];
 function readSql() {
     var mysql = require('mysql');
     var con = mysql.createConnection({
@@ -255,10 +260,15 @@ function readSql() {
     });
     con.query('select * from class', function (error, rows, fields) {
         if (error) throw error;
-        console.log(rows[0]['phonenumber']);
-    });
-    con.end();
+				numbers.push(rows[0]['phonenumber']);
+        console.log(numbers);
+    });		
+		setTimeout(function(){	
+    	con.end();
+		},100)
 }
+
+
 
 function addUserToSql(phonenumber) {
     // Twilio Message Functions
