@@ -39,23 +39,25 @@ app.post('/sms', function (request, response) {
 		addUserToSql(userPhone);
 	}
 	else if (msgBody.toLowerCase().trim() == 'start quiz' && checkRegistration(userPhone)) {
-		console.log('Sending Quiz Question');
 		sendQuestion(userPhone, question, answer, option1, option2);
-		setHasQuizStarted(true);
+		setHasQuizStarted(true, userPhone);
 	}
-	else if (msgBody.toLowerCase().trim() == answer && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == answer && canAcceptAnswer(userPhone)) {
 		console.log('Answer is correct');
 		sendCorrectResponse(userPhone, answer);
+		setHasTakenQuiz(true, userPhone);
 		updateSQL(userPhone, answer, true)
 	}
-	else if (msgBody.toLowerCase().trim() == option1 && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == option1 && canAcceptAnswer(userPhone)) {
 		console.log('Answer is wrong');
 		sendIncorrectResponse(userPhone, option1, answer);
+		setHasTakenQuiz(true, userPhone);
 		updateSQL(userPhone, option1, false)
 	}
-	else if (msgBody.toLowerCase().trim() == option2 && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == option2 && canAcceptAnswer(userPhone)) {
 		console.log('Answer is wrong');
 		sendIncorrectResponse(userPhone, option2, answer);
+		setHasTakenQuiz(true, userPhone);
 		updateSQL(userPhone, option2, false)
 	}
 	else {
@@ -85,14 +87,54 @@ function sendInformationText(phoneNumbers) {
 
 function checkRegistration(phonenumber) {
 	// Check if user exists in DB
-	// checkNumberExists(phonenumber)
-	return true;
+	numExists = checkNumberExists(phonenumber)
+	quizStarted = hasQuizStarted(phonenumber)
+	if (numExists && !quizStarted){
+		console.log("phoneNumber: "+phonenumber+" has passed registration checks");
+		return true;
+	} else{
+		console.log("Did not pass checkRegistration");
+		return false;
+	}
+}
+
+function canAcceptAnswer(phonenumber){
+	numExists = checkNumberExists(phonenumber)
+	quizStarted = hasQuizStarted(phonenumber)
+	quizTaken = hasTakenQuiz(phonenumber)
+	var bool;
+	if (numExists){
+		if (quizStarted){
+			if (!quizTaken){
+				sendSmsMessage("Your answer was accepted")
+				console.log("Answer was accepted")
+				// logic to handle updating sql to change hasTakenQuiz
+				bool = true;
+
+			} else {
+				sendSmsMessage("Cannot accept your answer, because you have already taken this quiz")
+				console.log("Answer was not accepted because user: "+phonenumber+" has already taken the quiz")
+				bool = false;
+			}
+		} else {
+			sendSmsMessage("You have not started a quiz yet, please text 'start quiz'")
+			console.log("Answer was not accepted because user: "+phonenumber+"has not started the quiz yet")
+			bool = false;
+		}
+
+	} else{
+		sendSmsMessage("You are not registered for this class, please text 'join' to be added")
+		console.log("Answer was not accepted because user: "+phonenumber+" is not registered for the class")
+		bool = false;
+	}
+
+	return bool;
 }
 
 function sendQuestion(phonenumber, question, answer, option1, option2) {
 	// Need to reformat the body to look more like a question with answer options
 	// and randomize answer option order so that the first one isnt right every time
-	console.log('User : ' + phonenumber + ' is starting a quiz')
+	console.log('Sending user: ' + phonenumber + ' quiz questions and answers')
 	client.messages.create({
 		from: fromNum
 		, to: phonenumber
@@ -217,37 +259,11 @@ function sendIncorrectResponse(phonenumber, answer, correctAnswer) {
 		if (err) console.error(err.message);
 	});
 }
-//promises needed to emulate synchronous scripting with SQL calls
-// var Promise = require('promise');
-// var promise = new Promise(function (resolve, reject) {
-// 		resolve(2 + 2);
-// 	})
-	//================================================================
-	//database is set up here 
-	// ================================================================
-var numbers = [];
 
-// function readSql() {
-//     var mysql = require('sync-mysql');
-//     var con = mysql.createConnection({
-//         host: "localhost",
-//         user: "root",
-//         password: "123456",
-//         database: 'db'
-//     });
-//     con.connect((err) => {
-//         if (err) {
-//             console.log(err);
-//             return;
-//         }
-//         console.log('Connection established');
-//     });
-//     con.query('select * from class', function (error, rows, fields) {
-//         if (error) throw error;
-//         console.log(rows[0]['phonenumber']);
-//     });
-//     con.end();
-// }
+//================================================================
+//database is set up here 
+// ================================================================
+var numbers = [];
 
 function addUserToSql(phonenumber) {
 	// put logic to check if phone number is already in SQL 
@@ -255,7 +271,7 @@ function addUserToSql(phonenumber) {
 
 	// Twilio Message Functions
 	function successfullyAddedText(phonenumber) {
-		console.log("Success Message being sent")
+		console.log("Success Message to user: "+phonenumber+" being sent")
 		client.messages.create({
 			from: fromNum
 			, to: phonenumber
@@ -278,7 +294,6 @@ function addUserToSql(phonenumber) {
 			console.log(err);
 			return;
 		}
-		console.log('Connection established');
 	});
 	// Insert Statement
 	con.query('insert into class (`phonenumber`) value (?)', [phonenumber], function (error, rows, fields) {
@@ -288,35 +303,6 @@ function addUserToSql(phonenumber) {
 	con.end();
 	// END SQL
 	successfullyAddedText(phonenumber);
-}
-
-function checkNumberExists(phonenumber) {
-	console.log('Checking if number: ' + phonenumber + ' is in DB')
-	var mysql = require('mysql');
-	var con = mysql.createConnection({
-		host: "localhost"
-		, user: "root"
-		, password: "123456"
-		, database: 'db'
-	});
-	con.connect((err) => {
-		if (err) {
-			console.log(err);
-			return;
-		}
-		console.log('Connection established');
-	});
-	con.query('select * from class where (?)', [phonenumber], function (error, rows, fields) {
-		if (error) {
-			console.log('Phone Number: ' + phonenumber + ' does not exist in DB')
-			throw error;
-		}
-		if (rows[0]['phonenumber']) {
-			exists = true;
-			console.log("HERE")
-		}
-	});
-	con.end();
 }
 
 function addQuestionsToSql(data) {
@@ -333,7 +319,6 @@ function addQuestionsToSql(data) {
 			console.log(err);
 			return;
 		}
-		console.log('Connection established');
 	});
 	// Insert Statement
 	con.query("delete from questions where question like '%%' ")
@@ -361,7 +346,6 @@ function updateSQL(phonenumber, answer, bool) {
 			console.log(err);
 			return;
 		}
-		console.log('Connection established');
 	});
 	// Insert Statement
 	con.query("UPDATE class SET answer = (?), answeredCorrectly = (?) where phonenumber = (?)", [answer, bool, phonenumber], function (error, rows, fields) {
@@ -372,7 +356,7 @@ function updateSQL(phonenumber, answer, bool) {
 	// END SQL
 }
 
-function setHasQuizStarted(bool){
+function setHasQuizStarted(bool, phonenumber){
 	var mysql = require('mysql');
 	var con = mysql.createConnection({
 		host: "localhost"
@@ -385,9 +369,29 @@ function setHasQuizStarted(bool){
 			console.log(err);
 			return;
 		}
-		console.log('Connection established');
 	});
 	con.query("UPDATE class SET hasQuizStarted = (?) where phonenumber = (?)", [bool, phonenumber], function (error, rows, fields) {
+		if (error) throw error;
+	});
+	con.end();
+
+}
+
+function setHasTakenQuiz(bool, phonenumber){
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
+	});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+	});
+	con.query("UPDATE class SET hasTakenQuiz = (?) where phonenumber = (?)", [bool, phonenumber], function (error, rows, fields) {
 		if (error) throw error;
 	});
 	con.end();
@@ -443,11 +447,72 @@ function getQuestion() {
     return result[0];
 
 }
-//Need to fix
-function hasQuizStarted(phonenumber) {
-	return true;
+
+function checkNumberExists(phonenumber) {
+	console.log('Checking if number: ' + phonenumber + ' is in DB')
+	var MySql = require('sync-mysql');
+	var connection = new MySql({
+	  host: 'localhost',
+	  user: 'root',
+	  database: 'db',
+	  password: '123456'
+	});
+
+	var result = connection.query('select * from class where phonenumber = (?)', [phonenumber], function (error, rows, fields) {
+        if (error) {
+        	throw error;
+        	console.log('Phone Number: ' + phonenumber + ' does not exist in DB')
+        	result = false;
+        } else {
+        	result = true;
+        }
+    });
+    connection.end;
+    return result;
 }
-//Need to fix
+
+function hasQuizStarted(phonenumber) {
+	console.log('Checking if number: ' + phonenumber + ' has already started this quiz')
+	var bool;
+	var MySql = require('sync-mysql');
+	var connection = new MySql({
+	  host: 'localhost',
+	  user: 'root',
+	  database: 'db',
+	  password: '123456'
+	});
+	var result = connection.query('SELECT hasQuizStarted from class where phonenumber = (?)', [phonenumber], function (error, rows, fields) {
+        if (error) throw error;
+    });
+    // console.log("Here: "+result[0]['hasQuizStarted'])
+    if (result[0]['hasQuizStarted'] == 1) 
+        bool = true;
+    else if (result[0]['hasQuizStarted']) {
+        bool =  false;
+    }
+    connection.end;
+    return bool;
+}
+
 function hasTakenQuiz(phonenumber) {
-	return true;
+	console.log('Checking if number: ' + phonenumber + ' has answered this quiz already')
+	var bool;
+	var MySql = require('sync-mysql');
+	var connection = new MySql({
+	  host: 'localhost',
+	  user: 'root',
+	  database: 'db',
+	  password: '123456'
+	});
+	var result = connection.query('SELECT hasTakenQuiz from class where phonenumber = (?)', [phonenumber], function (error, rows, fields) {
+        if (error) throw error;
+    });
+    // console.log("Here: "+result[0]['hasQuizStarted'])
+    if (result[0]['hasTakenQuiz'] == 1) 
+        bool = true;
+    else if (result[0]['hasTakenQuiz']) {
+        bool =  false;
+    }
+    connection.end;
+    return bool;
 }
