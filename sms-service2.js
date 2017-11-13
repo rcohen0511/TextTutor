@@ -1,215 +1,219 @@
+//twilio api calls
+var twilio = require('twilio');
+var client = require('twilio')(
+	// process.env.TWILIO_ACCOUNT_SID,
+	// process.env.TWILIO_AUTH_TOKEN
+	'ACc694cec59a35c6b5830571760dc626a6', 'af0ddb5adb3d8d38d04babd5b03b24db');
+// ================================================================
+// Setup HTTP Server and App parser 
+// ================================================================
 var http = require('http');
+var bodyParser = require('body-parser');
+var app = require('express')();
+//app is using body parser to parse the request body
+app.use(bodyParser.urlencoded({
+	extended: false
+}));
+http.createServer(app).listen(process.env.PORT || 3000, function () {
+	console.log("Express server listening on port 3000");
+});
+// ================================================================
+// Catches a text message from a user and do action
+// ================================================================
+app.post('/sms', function (request, response) {
+	var msgBody = request.body.Body;
+	var userPhone = request.body.From;
+	var question = getQuestion();
+	console.log(question)
+		// NEED TO ADD && hasTakenQuiz(userPhone) to each else if
+	if (msgBody.toLowerCase().trim() == 'join') {
+		addUserToSql(userPhone);
+	}
+	else if (msgBody.toLowerCase().trim() == 'start quiz' && checkRegistration(userPhone)) {
+		console.log('Sending Quiz Question');
+		sendQuestion(userPhone);
+	}
+	else if (msgBody.toLowerCase().trim() == question[1] && hasQuizStarted(userPhone)) {
+		console.log('Answer is correct');
+		sendCorrectResponse(userPhone, question[1]);
+		updateSQL(userPhone, question[1], true)
+	}
+	else if (msgBody.toLowerCase().trim() == question[2] && hasQuizStarted(userPhone)) {
+		console.log('Answer is wrong');
+		sendIncorrectResponse(userPhone, question[2], question[1]);
+		updateSQL(userPhone, question[2], false)
+	}
+	else if (msgBody.toLowerCase().trim() == question[3] && hasQuizStarted(userPhone)) {
+		console.log('Answer is wrong');
+		sendIncorrectResponse(userPhone, question[3], question[1]);
+		updateSQL(userPhone, question[3], false)
+	}
+	else {
+		InvalidUserInputText(userPhone, msgBody)
+	}
+});
+// ================================================================
+// App Logic
+// ================================================================
+function startLesson() {
+	// Set who wants quiz to false
+	var phoneNumbers = getPhoneNumbers();
+	sendInformationText(phoneNumbers);
+	// Info message should end with do you want to take a quiz?    
+}
 
+function sendInformationText(phoneNumbers) {
+	// loops through numbers
+}
+
+function checkRegistration(phonenumber) {
+	// Check if user exists in DB
+	// checkNumberExists(phonenumber)
+	return true;
+}
+
+function sendQuestion(phonenumber) {
+	var question = getQuestion();
+	console.log('User : ' + phonenumber + ' is starting a quiz')
+	client.messages.create({
+		from: '+19149966800'
+		, to: phonenumber
+		, body: question[0] + ":\n" + question[1] + "\n" + question[2] + "\n" + question[3]
+	}, function (err, message) {
+		if (err) console.error(err.message);
+	});
+}
+// ================================================================
+// Admin Console
+// ================================================================
+app.get('/admin', function (req, res) {
+	displayForm(res);
+});
+var rsvp = require('rsvp');
+var post_admin = function (req, res) {
+	formSubmission(req, res);
+	console.log('Admin Submitted Data');
+	startLesson();
+	console.log('Lesson Started');
+	return true;
+}
+app.post('/admin', function (req, res) {
+	var promise = new rsvp.Promise(function (fulfill, reject) {
+		if (post_admin) {
+			fulfill(post_admin)
+		}
+		else {
+			reject(post_admin);
+		}
+		console.log('2');
+	});
+	promise.then(res.redirect('/grades'));
+	//    formSubmission(req, res);
+	//    console.log('Admin Submitted Data');
+	//    startLesson();
+	//    console.log('Lesson Started');    
+	//		res.redirect('/grades');
+})
+app.get('/', function (req, res) {
+	res.redirect('/admin');
+});
+// ================================================================
+// jQuery Form
+// ================================================================
 var fs = require('fs');
 var formidable = require("formidable");
 var util = require('util');
 var port = process.env.PORT || 3000;
 
-var express = require('express');
-var twilio = require('twilio');
-var MessagingResponse = require('twilio').twiml.MessagingResponse;
-var bodyParser = require('body-parser');
-
-var questions = [
-    {
-        "questionId": 0,
-        "questionName": "Test question Name",
-        "info": "Do you wash your hands before you eat? You should! Otherwise you lend yourself vulnerable to nasty bacteria found on the street.",
-        "question": "How many minutes should you wash your hands?",
-        "choices": ['1. 2 minutes', '2. 1 minute', '3. 4 minutes'],
-        "answer": 1
-    },
-    {
-        "questionId": 1,
-        "questionName": "Test question Name1",
-        "info": "Basic information1",
-        "question": "What is blah blah, basic question1?",
-        "choices": [1, 2, 3],
-        "answer": 2
-    },
-    {
-        "questionId": 2,
-        "questionName": "Test question Name2",
-        "info": "Basic information2",
-        "question": "What is blah blah, basic question2?",
-        "choices": [1, 2, 3],
-        "answer": 3
-    },
-]
-var users = [
-    {
-        'name': 'Jon Koller',
-        'number': '+19143301533'
-    },
-
-    {
-        "name": "Bruce Wayne",
-        "number": "+19174445555"
-    }
-	,
-    {
-        "name": "Arnold Schwartzenager",
-        "number": "+12123334444"
-    }
-	]
-var values = [];
-
-var client = require('twilio')(
-        // process.env.TWILIO_ACCOUNT_SID,
-        // process.env.TWILIO_AUTH_TOKEN
-        'ACc694cec59a35c6b5830571760dc626a6',
-        'af0ddb5adb3d8d38d04babd5b03b24db'
-);
-
 function displayForm(res) {
-    fs.readFile('index.html', function (err, data) {
-        res.writeHead(200, {
-            'Content-Type': 'text/html',
-            'Content-Length': data.length
-        });
-        res.write(data);
-        res.end();
-    });
+	fs.readFile('index.html', function (err, data) {
+		res.writeHead(200, {
+			'Content-Type': 'text/html'
+			, 'Content-Length': data.length
+		});
+		res.write(data);
+		res.end();
+	});
 };
 
-
 function formSubmission(req, res) {
-    var fields = [];
-    var form = new formidable.IncomingForm();
-    form.on('field', function (field, value) {
-        fields[field] = value;
-        values.push(value);
-    });
-
-    form.on('end', function () {
-        res.writeHead(200, {
-            'content-type': 'text/plain'
-        });
-        res.end(util.inspect({
-            fields: fields
-        }));
-
-        questions[0] = {
-            "questionId": 0,
-            "questionName": "Test question Name",
-            "info": values[0],
-            "question": values[1],
-            "choices": ['1.' + values[1], '2.' + values[2], '3.' + values[3]],
-            "answer": 1
-        }
-        console.log(questions);
-    });
-    form.parse(req);
+	// Setting up Form
+	var values = [];
+	var fields = [];
+	var form = new formidable.IncomingForm();
+	form.on('field', function (field, value) {
+		fields[field] = value;
+		values.push(value);
+	});
+	form.on('end', function () {
+		//				res.redirect('/grades');
+		res.writeHead(200, {
+			'content-type': 'text/plain'
+		});
+		res.end(util.inspect({
+			fields: fields
+		}));
+		res.end(util.inspect({
+			fields: fields
+		}));
+		// // Printing Out Form
+		//        addQuestionsToSql(values);
+	});
+	form.parse(req);
+}
+// ================================================================
+// Twillio Messages
+// ================================================================
+function InvalidUserInputText(phonenumber, text) {
+	console.log('User inserted incorrect text: ' + text)
+	client.messages.create({
+		from: '+19149966800'
+		, to: phonenumber
+		, body: "Please check your spelling, if you have not joined the class text 'join' to start learning!"
+	}, function (err, message) {
+		if (err) console.error(err.message);
+	});
 }
 
-var app = express();
+function sendCorrectResponse(phonenumber, answer) {
+	console.log('User inserted correct answer: ' + answer)
+	client.messages.create({
+		from: '+19149966800'
+		, to: phonenumber
+		, body: "Congratulations you answered this correctly!"
+	}, function (err, message) {
+		if (err) console.error(err.message);
+	});
+}
 
-app.use(bodyParser.urlencoded({
-    extended: false
-}));
-
-var formSubmitted = false;
-var acceptedQuiz = false;
-var isQuestionOne = false; //this is a flag that gets switched when the quiz is initialized
-
-app.get('/', function (req, res) {
-    displayForm(res);
-});
-
-app.get('/sms', function (req, res) {
-    displayForm(res);
-});
-
-app.post('/', function (req, res) {
-    formSubmission(req, res);
-    formSubmitted = true;
-
-    setTimeout(function () {
-        for (var i = 0; i < users.length; i++) {
-            client.messages.create({
-                // from: process.env.TWILIO_PHONE_NUMBER,
-                from: '+19149966800',
-                to: values[i + 4],
-                body: 'Hello! Here\'s today\'s tip: \n' + questions[globalDay]['info'] + ' \n Would you like to test your knowledge? Respond with "Yes" to answer a quiz question!'
-            }, function (err, message) {
-                if (err) console.error(err.message);
-            });
-        }
-    }, 1000);	
-})
-
-app.post('/sms', function (req, res) {
-    var twilio = require('twilio');
-    var twiml = new MessagingResponse();
-
-    var msgBody = req.body.Body;
-// #### to respond to registration texts: 
-    
-    if(msgBody == 321){
-       var messageString = "hey";
-        twiml.message(messageString);
-    }
-    
-// ####    
-    if (!acceptedQuiz) { //if hasnt accepted the quiz attempt
-        if (msgBody.trim().toLowerCase() == 'yes') {
-            acceptedQuiz = true;
-            isQuestionOne = true;
-
-
-            var messageString = 'Here is your question! \nIs A A?\n\nChoices:\n';
-            for (var i = 0; i < 3; i++) {
-                messageString += '\n' + questions[globalDay]['choices'][i];
-            }
-            twiml.message(messageString);
-        } else if (msgBody.trim().toLowerCase() == 'no') {
-            twiml.message('Fair enough!');
-        } else {
-            twiml.message('Please check your spelling or re-type \'Yes\' to take the quiz!');
-        }
-    } else if (acceptedQuiz && isQuestionOne) {
-        if ((globalDay == 0 && msgBody == 1) || (globalDay == 1 && msgBody == 1) || (globalDay == 2 && msgBody == 3)) {
-            isQuestionOne = false;
-            twiml.message('Correct! Great job! Stay tuned tomorrow for more!');
-        } else if (parseInt(msgBody) > 3 || parseInt(msgBody) < 1 || isNaN(msgBody)) {
-            twiml.message('Please check your response! Choose 1, 2, or 3!');
-        } else {
-            isQuestionOne = false;
-            twiml.message('I\'m sorry, but that\'s incorrect. Try again tomorrow!');
-        }
-    }
-    
-    res.writeHead(200, {
-        'Content-Type': 'text/xml'
-    });
-    res.end(twiml.toString());
-});
-
-http.createServer(app).listen(process.env.PORT || 3000, function () {
-    console.log("Express server listening on port 3000");
-});
-
-var dayInMilliseconds = 1000 * 60 * 60 * 24;
-var globalDay = 0;
-
-
-
-
+function sendIncorrectResponse(phonenumber, answer, correctAnswer) {
+	console.log('User inserted incorrect answer: ' + answer)
+	client.messages.create({
+		from: '+19149966800'
+		, to: phonenumber
+		, body: "Sorry you got this one wrong, the correct answer was: " + correctAnswer
+	}, function (err, message) {
+		if (err) console.error(err.message);
+	});
+}
+// ================================================================
+//database is set up here 
+// ================================================================
 function readSql() {
 	var mysql = require('mysql');
 	var con = mysql.createConnection({
-		host: "localhost",
-		user: "root",
-		password: "1111",
-		database: 'db'
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
 	});
-con.connect((err) => {
-  if(err){
-    console.log(err);
-    return;
-  }
-  console.log('Connection established');
-});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
 	con.query('select * from class', function (error, rows, fields) {
 		if (error) throw error;
 		console.log(rows[0]['phonenumber']);
@@ -217,38 +221,163 @@ con.connect((err) => {
 	con.end();
 }
 
-var phonenumber = '1-444-312-1534';
-function addUserToSql() {
+function addUserToSql(phonenumber) {
+	// Twilio Message Functions
+	function successfullyAddedText(phonenumber) {
+		console.log("Success Message being sent")
+		client.messages.create({
+			from: '+19149966800'
+			, to: phonenumber
+			, body: "Congrats you've been successfully added"
+		}, function (err, message) {
+			if (err) console.error(err.message);
+		});
+	}
+	// Connection to SQL
+	console.log('Adding phonenumber: ' + phonenumber + ' to DB')
 	var mysql = require('mysql');
 	var con = mysql.createConnection({
-		host: "localhost",
-		user: "root",
-		password: "1111",
-		database: 'db'
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
 	});
-con.connect((err) => {
-  if(err){
-    console.log(err);
-    return;
-  }
-  console.log('Connection established');
-});
-	
-//	'UPDATE users SET foo = ?, bar = ?, baz = ? WHERE id = ?', ['a', 'b', 'c', userId],
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
+	// Insert Statement
 	con.query('insert into class (`phonenumber`) value (?)', [phonenumber], function (error, rows, fields) {
 		if (error) throw error;
+	});
+	// Close connection
+	con.end();
+	// END SQL
+	successfullyAddedText(phonenumber);
+}
+
+function checkNumberExists(phonenumber) {
+	console.log('Checking if number: ' + phonenumber + ' is in DB')
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
+	});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
+	con.query('select * from class where (?)', [phonenumber], function (error, rows, fields) {
+		if (error) {
+			console.log('Phone Number: ' + phonenumber + ' does not exist in DB')
+			throw error;
+		}
+		if (rows[0]['phonenumber']) {
+			exists = true;
+			console.log("HERE")
+		}
 	});
 	con.end();
 }
 
+function addQuestionsToSql(data) {
+	// Connection to SQL
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
+	});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
+	// Insert Statement
+	con.query("delete from questions where question like '%%' ")
+	con.query('insert into questions (question, answer, option1, option2) value (?)', [data], function (error, rows, fields) {
+		if (error) throw error;
+	});
+	// Close connection
+	con.end();
+	// END SQL
+	console.log('Successfully Added data into SQL: ' + data)
+}
 
+function updateSQL(phonenumber, answer, bool) {
+	// Connection to SQL
+	console.log('Updating User DB, answer: ' + answer + ' ,correct: ' + bool)
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
+	});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
+	// Insert Statement
+	con.query("UPDATE class SET answer = (?), answeredCorrectly = (?) where phonenumber = (?)", [answer, bool, phonenumber], function (error, rows, fields) {
+		if (error) throw error;
+	});
+	// Close connection
+	con.end();
+	// END SQL
+}
+// Get From DB functions
+// ================================================================
+// need to fix
+function getPhoneNumbers() {
+	// TODO Add SQL query
+	numbers = ['+19143301533', '+19174160409']
+	return numbers
+}
+//Need to fix
+function getQuestion() {
+	return ['q3', 'a', '1', '2'];
+}
+//Need to fix
+function hasQuizStarted(phonenumber) {
+	return true;
+}
+//Need to fix
+function hasTakenQuiz(phonenumber) {
+	return true;
+}
+// Jon will finish this function and create an HTML table that will be shown after
+// form submission:
+// Make a button to refresh
+// Listview 
+// sound/video
+// 1 link 
+// 3 images
+app.get('/grades', function (req, res) {
+	getClassGrades(res);
+});
 
-
-//// #### to respond to registration texts: 
-//    
-//    if(msgBody == 321){
-//       var messageString = "hey";
-//        twiml.message(messageString);
-//    }
-//    
-//// #### 
+function getClassGrades(res) {
+	fs.readFile('grades_table.html', function (err, data) {
+		res.writeHead(200, {
+			'Content-Type': 'text/html'
+			, 'Content-Length': data.length
+		});
+		res.write(data);
+		res.end();
+	});
+}
