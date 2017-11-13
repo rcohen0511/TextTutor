@@ -3,7 +3,8 @@ var twilio = require('twilio');
 var client = require('twilio')(
 	// process.env.TWILIO_ACCOUNT_SID,
 	// process.env.TWILIO_AUTH_TOKEN
-	'ACc694cec59a35c6b5830571760dc626a6', 'af0ddb5adb3d8d38d04babd5b03b24db');
+	'ACa87e8aa01e3aca3e1c104b065a03e951', '530048a4490e8de5edb43db6d8d47d22');
+var fromNum = '+19176151444'
 // ================================================================
 // Setup HTTP Server and App parser 
 // ================================================================
@@ -26,48 +27,60 @@ http.createServer(app).listen(process.env.PORT || 3000, function () {
 app.post('/sms', function (request, response) {
 	var msgBody = request.body.Body;
 	var userPhone = request.body.From;
-	var question = getQuestion();
-	console.log(question)
+	var questionHash = getQuestion();
+	console.log("Question and Answers: "+questionHash);
+	question = questionHash.question;
+	answer = questionHash.answer;
+	option1 = questionHash.option1;
+	option2 = questionHash.option2;
+
 		// NEED TO ADD && hasTakenQuiz(userPhone) to each else if
 	if (msgBody.toLowerCase().trim() == 'join') {
 		addUserToSql(userPhone);
 	}
 	else if (msgBody.toLowerCase().trim() == 'start quiz' && checkRegistration(userPhone)) {
 		console.log('Sending Quiz Question');
-		sendQuestion(userPhone);
+		sendQuestion(userPhone, question, answer, option1, option2);
+		setHasQuizStarted(true);
 	}
-	else if (msgBody.toLowerCase().trim() == question[1] && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == answer && hasQuizStarted(userPhone)) {
 		console.log('Answer is correct');
-		sendCorrectResponse(userPhone, question[1]);
-		updateSQL(userPhone, question[1], true)
+		sendCorrectResponse(userPhone, answer);
+		updateSQL(userPhone, answer, true)
 	}
-	else if (msgBody.toLowerCase().trim() == question[2] && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == option1 && hasQuizStarted(userPhone)) {
 		console.log('Answer is wrong');
-		sendIncorrectResponse(userPhone, question[2], question[1]);
-		updateSQL(userPhone, question[2], false)
+		sendIncorrectResponse(userPhone, option1, answer);
+		updateSQL(userPhone, option1, false)
 	}
-	else if (msgBody.toLowerCase().trim() == question[3] && hasQuizStarted(userPhone)) {
+	else if (msgBody.toLowerCase().trim() == option2 && hasQuizStarted(userPhone)) {
 		console.log('Answer is wrong');
-		sendIncorrectResponse(userPhone, question[3], question[1]);
-		updateSQL(userPhone, question[3], false)
+		sendIncorrectResponse(userPhone, option2, answer);
+		updateSQL(userPhone, option2, false)
 	}
 	else {
 		InvalidUserInputText(userPhone, msgBody)
 	}
 });
+
+
 // ================================================================
 // App Logic
 // ================================================================
 function startLesson() {
 	// Set who wants quiz to false
+	console.log("Lesson starting")
 	var phoneNumbers = getPhoneNumbers();
-	// sendInformationText(phoneNumbers);
+	sendInformationText(phoneNumbers);
 	// Info message should end with do you want to take a quiz?    
 }
 
-function sendInformationText(phoneNumbers) {
-	// loops through numbers
-	console.log(phoneNumbers);
+function sendInformationText(phoneNumbers) {	
+	var text = "Your instructor has posted a new question please text 'start quiz' to answer it";
+ 	for (var i = 0; i < phoneNumbers.length; i++) {
+ 		phonenumber = phoneNumbers[i];
+      	sendSmsMessage(phonenumber, text);
+    }
 }
 
 function checkRegistration(phonenumber) {
@@ -76,13 +89,14 @@ function checkRegistration(phonenumber) {
 	return true;
 }
 
-function sendQuestion(phonenumber) {
-	var question = getQuestion();
+function sendQuestion(phonenumber, question, answer, option1, option2) {
+	// Need to reformat the body to look more like a question with answer options
+	// and randomize answer option order so that the first one isnt right every time
 	console.log('User : ' + phonenumber + ' is starting a quiz')
 	client.messages.create({
-		from: '+19149966800'
+		from: fromNum
 		, to: phonenumber
-		, body: question[0] + ":\n" + question[1] + "\n" + question[2] + "\n" + question[3]
+		, body: question + ":\n" + answer + "\n" + option1 + "\n" + option2
 	}, function (err, message) {
 		if (err) console.error(err.message);
 	});
@@ -94,11 +108,14 @@ app.get('/admin', function (req, res) {
 	displayForm(res);
 });
 
+app.get('/grades', function (req, res) {
+	getClassGrades(res);
+});
+
 app.post('/admin', function (req, res) {
     formSubmission(req, res);
     console.log('Admin Submitted Data');
     startLesson();
-    console.log('Lesson Started');    
 })
 // ================================================================
 // root redirects to /admin 
@@ -135,23 +152,14 @@ function formSubmission(req, res) {
 		values.push(value);
 	});
 	form.on('end', function () {
-		/* 
-		redirects to grades page
-		and original header written
-		in function in app.get('/grades')
-			*/
 		res.redirect('/grades');
 		res.end(util.inspect({
 			fields: fields
 		}));
-		// // Printing Out Form
-		//        addQuestionsToSql(values);
+		addQuestionsToSql(values);
 	});
 	form.parse(req);
 }
-app.get('/grades', function (req, res) {
-	getClassGrades(res);
-});
 
 function getClassGrades(res) {
 	fs.readFile('grades_table.html', function (err, data) {
@@ -166,10 +174,21 @@ function getClassGrades(res) {
 // ================================================================
 // Twillio Messages
 // ================================================================
+function sendSmsMessage(phonenumber, text){
+	client.messages.create({
+		from: fromNum
+		, to: phonenumber
+		, body: text
+	}, function (err, message) {
+		if (err) console.error(err.message);
+	});
+}
+
 function InvalidUserInputText(phonenumber, text) {
+	// put logic to check if user is in the class already, if not send join message, else send start quiz message
 	console.log('User inserted incorrect text: ' + text)
 	client.messages.create({
-		from: '+19149966800'
+		from: fromNum
 		, to: phonenumber
 		, body: "Please check your spelling, if you have not joined the class text 'join' to start learning!"
 	}, function (err, message) {
@@ -180,7 +199,7 @@ function InvalidUserInputText(phonenumber, text) {
 function sendCorrectResponse(phonenumber, answer) {
 	console.log('User inserted correct answer: ' + answer)
 	client.messages.create({
-		from: '+19149966800'
+		from: fromNum
 		, to: phonenumber
 		, body: "Congratulations you answered this correctly!"
 	}, function (err, message) {
@@ -191,7 +210,7 @@ function sendCorrectResponse(phonenumber, answer) {
 function sendIncorrectResponse(phonenumber, answer, correctAnswer) {
 	console.log('User inserted incorrect answer: ' + answer)
 	client.messages.create({
-		from: '+19149966800'
+		from: fromNum
 		, to: phonenumber
 		, body: "Sorry you got this one wrong, the correct answer was: " + correctAnswer
 	}, function (err, message) {
@@ -199,10 +218,10 @@ function sendIncorrectResponse(phonenumber, answer, correctAnswer) {
 	});
 }
 //promises needed to emulate synchronous scripting with SQL calls
-var Promise = require('promise');
-var promise = new Promise(function (resolve, reject) {
-		resolve(2 + 2);
-	})
+// var Promise = require('promise');
+// var promise = new Promise(function (resolve, reject) {
+// 		resolve(2 + 2);
+// 	})
 	//================================================================
 	//database is set up here 
 	// ================================================================
@@ -231,11 +250,14 @@ var numbers = [];
 // }
 
 function addUserToSql(phonenumber) {
+	// put logic to check if phone number is already in SQL 
+	// and send different message to user if they are already in
+
 	// Twilio Message Functions
 	function successfullyAddedText(phonenumber) {
 		console.log("Success Message being sent")
 		client.messages.create({
-			from: '+19149966800'
+			from: fromNum
 			, to: phonenumber
 			, body: "Congrats you've been successfully added"
 		}, function (err, message) {
@@ -349,12 +371,35 @@ function updateSQL(phonenumber, answer, bool) {
 	con.end();
 	// END SQL
 }
+
+function setHasQuizStarted(bool){
+	var mysql = require('mysql');
+	var con = mysql.createConnection({
+		host: "localhost"
+		, user: "root"
+		, password: "123456"
+		, database: 'db'
+	});
+	con.connect((err) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log('Connection established');
+	});
+	con.query("UPDATE class SET hasQuizStarted = (?) where phonenumber = (?)", [bool, phonenumber], function (error, rows, fields) {
+		if (error) throw error;
+	});
+	con.end();
+
+}
+
 // Get From DB functions
 // ================================================================
 // need to fix
 
 function sqlCon(){
-	
+
 }
 
 function getPhoneNumbers() {
@@ -368,16 +413,35 @@ function getPhoneNumbers() {
 	  database: 'db',
 	  password: '123456'
 	});
-	 
+	
 	var result = connection.query('SELECT * from class');
-	result = result[0]['phonenumber']
-	console.log(result)
+	var phoneNumbers = [];
+  	for (var i = 0; i < result.length; i++) {
+      phoneNumbers.push(result[i]['phonenumber'])
+    }
     connection.end;	
-    return result
+    console.log(phoneNumbers)
+    return phoneNumbers;
 }
 //Need to fix
 function getQuestion() {
-	return ['q3', 'a', '1', '2'];
+	// return ['q3', 'a', '1', '2'];
+	var MySql = require('sync-mysql');
+	var connection = new MySql({
+	  host: 'localhost',
+	  user: 'root',
+	  database: 'db',
+	  password: '123456'
+	});
+	
+	var result = connection.query('SELECT * from questions');
+	// var phoneNumbers = [];
+ //  	for (var i = 0; i < result.length; i++) {
+ //      phoneNumbers.push(result[i]['phonenumber'])
+ //    }
+    connection.end;	
+    return result[0];
+
 }
 //Need to fix
 function hasQuizStarted(phonenumber) {

@@ -24,3 +24,12 @@ You should be able to hard-code the info in the outermost scope of sms.js, thoug
 4. Stream of data is not linear - because the forms are not in the same order as the original process...
 
 Potential fix: add webhook for get requests on /sms as on 117. 
+
+
+Run Demo:
+Inside TextTutor directory:
+- npm install to rebuild any missing module (may not be neccessary)
+- npm start
+- Run "ngrok http 3000" to get webook for ngrok
+- Go onto Twilio account associated with code and put in webhook for ngrok
+- Text "join" to 19149966800 in order to join the class
