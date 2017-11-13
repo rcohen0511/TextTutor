@@ -66,8 +66,18 @@ app.post('/sms', function (request, response) {
 // ================================================================
 function startLesson(){
     // Set who wants quiz to false
-    var phoneNumbers = getPhoneNumbers();
-    sendInformationText(phoneNumbers);
+    var getNums = function(){
+        getPhoneNumbers
+            .then(function(fulfilled){
+                console.log('worked')
+            })
+            .catch(function(error){
+                console.log('didnt work')
+            });
+    };
+    getNums();
+
+    // sendInformationText(phoneNumbers);
     // Info message should end with do you want to take a quiz?    
 }
 
@@ -345,9 +355,33 @@ function updateSQL(phonenumber, answer, bool){
 // ================================================================
 // need to fix
 function getPhoneNumbers(){
-    // TODO Add SQL query
-    numbers = ['+19143301533','+19174160409']
-    return numbers
+    var phoneNumbers = new Promise(
+        function(resolve,reject){
+            var mysql = require('mysql');
+            var con = mysql.createConnection({
+                host: "localhost",
+                user: "root",
+                password: "123456",
+                database: 'db'
+            });
+            con.connect((err) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                console.log('Connection established');
+            });
+            con.query('select * from class', function (error, rows, fields) {
+                if (error){
+                    reject(error)
+                    throw error; 
+                } else {
+                    resolve(console.log(rows[0]['phonenumber']));
+                }            
+            });
+            con.end();
+        }
+    );
 }
 
 //Need to fix
