@@ -58,33 +58,16 @@ app.post('/sms', function (request, response) {
 // ================================================================
 // App Logic
 // ================================================================
-<<<<<<< HEAD
-function startLesson(){
-    // Set who wants quiz to false
-    var getNums = function(){
-        getPhoneNumbers
-            .then(function(fulfilled){
-                console.log('worked')
-            })
-            .catch(function(error){
-                console.log('didnt work')
-            });
-    };
-    getNums();
-
-    // sendInformationText(phoneNumbers);
-    // Info message should end with do you want to take a quiz?    
-=======
 function startLesson() {
 	// Set who wants quiz to false
 	var phoneNumbers = getPhoneNumbers();
-	sendInformationText(phoneNumbers);
+	// sendInformationText(phoneNumbers);
 	// Info message should end with do you want to take a quiz?    
->>>>>>> 1667cf4ae315d642eaccd0f4cac1266c704faacc
 }
 
 function sendInformationText(phoneNumbers) {
 	// loops through numbers
+	console.log(phoneNumbers);
 }
 
 function checkRegistration(phonenumber) {
@@ -109,29 +92,17 @@ function sendQuestion(phonenumber) {
 // ================================================================
 app.get('/admin', function (req, res) {
 	displayForm(res);
-	readSql();
 });
+
 app.post('/admin', function (req, res) {
-		//timer given to allow jingle to play
-		setTimeout(function () {
-			formSubmission(req, res);
-			console.log('Admin Submitted Data');
-			//++++------
-			//added text message here to make sure texts are being sent and server is properly hooked to Twilio
-			//----+++++
-			client.messages.create({
-				// from: process.env.TWILIO_PHONE_NUMBER,
-				from: '+19149966800'
-				, to: '+19143301533'
-				, body: 'Hello! Here\'s today\'s tip: \n white rhinos are endangered because of pseudoscience \n Would you like to test your knowledge? Respond with "Yes" to answer a quiz question!'
-			});
-			startLesson();
-			console.log('Lesson Started');
-		}, 1500);
-	})
-	// ================================================================
-	// root redirects to /admin 
-	//  ================================================================
+    formSubmission(req, res);
+    console.log('Admin Submitted Data');
+    startLesson();
+    console.log('Lesson Started');    
+})
+// ================================================================
+// root redirects to /admin 
+//  ================================================================
 app.get('/', function (req, res) {
 	res.redirect('/admin');
 });
@@ -237,34 +208,27 @@ var promise = new Promise(function (resolve, reject) {
 	// ================================================================
 var numbers = [];
 
-function readSql() {
-	var mysql = require('mysql');
-	var con = mysql.createConnection({
-		host: "localhost"
-		, user: "root"
-		, password: "123456"
-		, database: 'db'
-	});
-	con.connect((err) => {
-		if (err) {
-			console.log(err);
-			return;
-		}
-		console.log('Connection established');
-	});
-	promise.then(con.query('select * from class', function (error, rows, fields) {
-		if (error) throw error;
-		numbers.push(rows[0]['phonenumber']);
-	})).then(con.end())
-	
-//++++====++++====
-	//anything can be put in here that relates to data derived from the query
-//++++====++++====___________________________________________
-	setTimeout(function () {
-		console.log(numbers);
-	}, 1000);
-
-}
+// function readSql() {
+//     var mysql = require('sync-mysql');
+//     var con = mysql.createConnection({
+//         host: "localhost",
+//         user: "root",
+//         password: "123456",
+//         database: 'db'
+//     });
+//     con.connect((err) => {
+//         if (err) {
+//             console.log(err);
+//             return;
+//         }
+//         console.log('Connection established');
+//     });
+//     con.query('select * from class', function (error, rows, fields) {
+//         if (error) throw error;
+//         console.log(rows[0]['phonenumber']);
+//     });
+//     con.end();
+// }
 
 function addUserToSql(phonenumber) {
 	// Twilio Message Functions
@@ -388,41 +352,28 @@ function updateSQL(phonenumber, answer, bool) {
 // Get From DB functions
 // ================================================================
 // need to fix
-<<<<<<< HEAD
-function getPhoneNumbers(){
-    var phoneNumbers = new Promise(
-        function(resolve,reject){
-            var mysql = require('mysql');
-            var con = mysql.createConnection({
-                host: "localhost",
-                user: "root",
-                password: "123456",
-                database: 'db'
-            });
-            con.connect((err) => {
-                if (err) {
-                    console.log(err);
-                    return;
-                }
-                console.log('Connection established');
-            });
-            con.query('select * from class', function (error, rows, fields) {
-                if (error){
-                    reject(error)
-                    throw error; 
-                } else {
-                    resolve(console.log(rows[0]['phonenumber']));
-                }            
-            });
-            con.end();
-        }
-    );
-=======
+
+function sqlCon(){
+	
+}
+
 function getPhoneNumbers() {
 	// TODO Add SQL query
-	numbers = ['+19143301533', '+19174160409']
-	return numbers
->>>>>>> 1667cf4ae315d642eaccd0f4cac1266c704faacc
+	// numbers = ['+19143301533', '+19174160409']
+	// return numbers
+	var MySql = require('sync-mysql');
+	var connection = new MySql({
+	  host: 'localhost',
+	  user: 'root',
+	  database: 'db',
+	  password: '123456'
+	});
+	 
+	var result = connection.query('SELECT * from class');
+	result = result[0]['phonenumber']
+	console.log(result)
+    connection.end;	
+    return result
 }
 //Need to fix
 function getQuestion() {
